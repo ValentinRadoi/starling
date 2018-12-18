@@ -528,11 +528,15 @@ class AssetManager extends EventDispatcher
             if(mimeType != null)
                 asset.mimeType = mimeType;
 
-            var assetFactory:AssetFactory = getFactoryFor(asset);
-            if (assetFactory == null)
-                Execute.execute(onAnyError, ["Warning: no suitable factory found for '" + asset.name + "'"]);
-            else
-                assetFactory.create(asset, helper, onComplete, onCreateError);
+            if (transformAsset(asset))
+            {
+                var assetFactory:AssetFactory = getFactoryFor(asset);
+                if (assetFactory == null)
+                    Execute.execute(onAnyError, ["Warning: no suitable factory found for '" + asset.name + "'"]);
+                else
+                    assetFactory.create(asset, helper, onComplete, onCreateError);
+            }
+            else onComplete(null, null);
         }
 
         onLoadProgress = function (ratio:Float):Void
@@ -606,6 +610,15 @@ class AssetManager extends EventDispatcher
                 dispatchEventWith(Event.TEXTURES_RESTORED);
         }
         else _numLostTextures++;
+    }
+
+    /** This method is called directly after asset data has been loaded from a local or remote
+     *  source. Override this method to update the reference in any way (like changing name,
+     *  extension or data) before the asset reference is passed to the respective factory.
+     *  Return <code>false</code> if you don't want to add that asset at all. */
+    private function transformAsset(asset:AssetReference):Bool
+    {
+        return true;
     }
 
     // basic accessing methods
@@ -748,7 +761,7 @@ class AssetManager extends EventDispatcher
     /** Returns a texture with a certain name. Includes textures stored inside atlases. */
     public function getTexture(name:String):Texture
     {
-        return cast(getAsset(AssetType.TEXTURE, name), Texture);
+        return getAsset(AssetType.TEXTURE, name);
     }
 
     /** Returns all textures that start with a certain string, sorted alphabetically
@@ -940,7 +953,7 @@ class AssetManager extends EventDispatcher
      *  accessible; override it if you need a custom naming scheme.
      *
      *  @return the name to be used for the asset, or 'null' if it can't be determined. */
-    private function getNameFromUrl(url:String):String
+    public function getNameFromUrl(url:String):String
     {
         if (url != null)
         {
@@ -956,7 +969,7 @@ class AssetManager extends EventDispatcher
      *
      *  @return the extension to be used for the asset, or an empty string if it can't be
      *          determined. */
-    private function getExtensionFromUrl(url:String):String
+    public function getExtensionFromUrl(url:String):String
     {
         if (url != null)
         {

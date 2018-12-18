@@ -140,9 +140,36 @@ class MathUtil
         return rad / Math.PI * 180.0;
     }
     
-    public static function toFixed(value:Float, precision:Int):String {
+    public static function toFixed(value:Float, precision:Int):String
+    {
         var sign = value > 0 ? 1 : -1;
         var mult = precision <= 0 ? 1 : precision * 10;
         return Std.string(sign * Math.round(value * mult) / mult);
+    }
+    
+    /** Transform an `Int` value to a `String` using the specified `base` */
+    public static function toBase(value:Int, base:Int):String
+    {
+        #if(js || flash)
+            return untyped value.toString(base);
+        #else
+
+        var BASE:String = "0123456789abcdefghijklmnopqrstuvwxyz";	//Supporting base 2 to 36
+        
+        if(base < 2 || base > BASE.length)
+            return throw 'invalid base $base, it must be between 2 and ${BASE.length}';
+        if(base == 10 || value == 0)
+            return '$value';
+
+        var buf:String = "";
+        var abs:Int = Std.int(Math.abs(value));
+        while (abs > 0)
+        {
+            buf = BASE.charAt(abs % base) + buf;
+            abs = Std.int(abs / base);
+        }
+
+        return (value < 0 ? "-" : "") + buf;
+        #end
     }
 }

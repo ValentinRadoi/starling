@@ -22,6 +22,7 @@ import openfl.utils.ByteArray;
 
 import starling.textures.Texture;
 import starling.utils.Execute;
+import starling.utils.ByteArrayUtil;
 
 /** This AssetFactory creates texture assets from bitmaps and image files. */
 class BitmapTextureFactory extends AssetFactory
@@ -38,7 +39,9 @@ class BitmapTextureFactory extends AssetFactory
     override public function canHandle(reference:AssetReference):Bool
     {
         return Std.is(reference.data, Bitmap) || Std.is(reference.data, BitmapData) ||
-            super.canHandle(reference);
+            super.canHandle(reference) || (Std.is(reference.data, #if commonjs ByteArray #else ByteArrayData #end) &&
+            (ByteArrayUtil.startsWith(cast(reference.data, ByteArray), [0xff, 0xd8]) || //JPEG magic number
+            ByteArrayUtil.startsWith(cast(reference.data, ByteArray), [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))); //PNG magic number
     }
 
     /** @inheritDoc */

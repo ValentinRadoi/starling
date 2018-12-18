@@ -20,15 +20,22 @@ class ByteArrayUtil
     /** @private */
     public function new() { throw new AbstractClassError(); }
 
-    /** Figures out if a byte array starts with the UTF bytes of a certain string. If the
-     *  array starts with a 'BOM', it is ignored; so are leading zeros and whitespace. */
-    public static function startsWithString(bytes:ByteArray, string:String):Bool
+    /** Figures out if a byte array starts with a certain sequence, either the UTF bytes of a given String or a specific set of bytes given as an Array<Int>.
+	 * If the array starts with a 'BOM', it is ignored; so are leading zeros and whitespace. */
+    public static function startsWith(bytes:ByteArray, sequence:Dynamic):Bool
     {
         var start:Int = 0;
         var length:Int = bytes.length;
 
         var wantedBytes:ByteArray = new ByteArray();
-        wantedBytes.writeUTFBytes(string);
+        if(Std.is(sequence, String))
+            wantedBytes.writeUTFBytes(sequence);
+        else if (Std.is(sequence, Array))
+        {
+            var bytesSequence:Array<Int> = sequence;
+            for(byte in bytesSequence)
+                wantedBytes.writeByte(byte);
+        }
 
         // recognize BOMs
 

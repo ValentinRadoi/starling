@@ -35,7 +35,7 @@ class XmlFactory extends AssetFactory
     override public function canHandle(reference:AssetReference):Bool
     {
         return super.canHandle(reference) || (Std.is(reference.data, #if commonjs ByteArray #else ByteArrayData #end) &&
-            ByteArrayUtil.startsWithString(cast(reference.data, ByteArray), "<"));
+            ByteArrayUtil.startsWith(cast(reference.data, ByteArray), "<"));
     }
 
     /** Creates the XML asset and passes it to 'onComplete'. If the XML contains a

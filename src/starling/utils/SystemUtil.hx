@@ -52,6 +52,7 @@ class SystemUtil
             "isAndroid": { get: untyped __js__ ("function () { return SystemUtil.get_isAndroid (); }") },
             "isMac": { get: untyped __js__ ("function () { return SystemUtil.get_isMac (); }") },
             "isWindows": { get: untyped __js__ ("function () { return SystemUtil.get_isWindows (); }") },
+            "isWeb": { get: untyped __js__ ("function () { return SystemUtil.get_isWeb (); }") },
             "isDesktop": { get: untyped __js__ ("function () { return SystemUtil.get_isDesktop (); }") },
         });
         
@@ -70,7 +71,7 @@ class SystemUtil
 
         try
         {
-			#if flash
+			#if (flash ||html5)
 			var nativeAppClass:Dynamic = Type.resolveClass("flash.desktop::NativeApplication");
 			if (nativeAppClass == null)
 				throw new Error("Not Air");
@@ -285,6 +286,14 @@ class SystemUtil
     {
         return platform == "WIN";
     }
+    
+     /** Indicates if the code is executed inside a browser as HTML5 content, based on the <code>platform</code>
+        *  string. */
+    public static var isWeb(get, never):Bool;
+    private static function get_isWeb():Bool
+    {
+        return platform == "WEB";
+    }
 
     /** Indicates if the code is executed on a Desktop computer with Windows, macOS or Linux
         *  operating system. If the method returns 'false', it's probably a mobile device
@@ -292,6 +301,6 @@ class SystemUtil
     public static var isDesktop(get, never):Bool;
     private static function get_isDesktop():Bool
     {
-        return platform == "WIN" || platform == "MAC" || platform == "LNX";
+        return platform == "WEB" || platform == "WIN" || platform == "MAC" || platform == "LNX";
     }
 }

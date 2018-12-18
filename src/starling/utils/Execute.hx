@@ -18,7 +18,10 @@ class Execute
      *  the function, the argument list is cropped / filled up with <code>null</code> values. */
     public static function execute(func:Function, args:Array<Dynamic> = null):Void
     {
-        if (func != null)
+		if (func != null)
+			Reflect.callMethod(func, func, args);
+		
+        /*if (func != null)
         {
 			if (args == null) args = [];
 			
@@ -51,6 +54,6 @@ class Execute
 				case -1: Reflect.callMethod(func, func, args);
                 default: Reflect.callMethod(func, func, args.slice(0, maxNumArgs));
             }
-        }
+        }*/
     }
 }

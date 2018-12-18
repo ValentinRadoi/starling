@@ -1133,6 +1133,8 @@ class AssetManager extends EventDispatcher
             
             if (extension != null)
                 extension = extension.toLowerCase();
+			if (byteArrayStartsWith(bytes, [0xff, 0xd8]))	//JPG magic number - force JPG extension
+				extension = "jpg";
 
             switch (extension)
             {
@@ -1269,40 +1271,66 @@ class AssetManager extends EventDispatcher
         if (__verbose) trace("[AssetManager] " + message);
     }
     
-    private function byteArrayStartsWith(bytes:ByteArray, char:String):Bool
+    public static function byteArrayStartsWith(bytes:ByteArray, sequence:Dynamic):Bool
     {
         var start:Int = 0;
         var length:Int = bytes.length;
-        var wanted:Int = char.charCodeAt(0);
-        
+
+        var wantedBytes:ByteArray = new ByteArray();
+        if(Std.is(sequence, String))
+            wantedBytes.writeUTFBytes(sequence);
+        else if (Std.is(sequence, Array))
+        {
+            var bytesSequence:Array<Int> = sequence;
+            for(byte in bytesSequence)
+                wantedBytes.writeByte(byte);
+        }
+
         // recognize BOMs
-        
+
         if (length >= 4 &&
-            (#if commonjs bytes.get(0) #else bytes[0] #end == 0x00 &&#if commonjs bytes.get(1) #else bytes[1] #end == 0x00 && #if commonjs bytes.get(2) #else bytes[2] #end == 0xfe && #if commonjs bytes.get(3) #else bytes[3] #end == 0xff) ||
-            (#if commonjs bytes.get(0) #else bytes[0] #end == 0xff && #if commonjs bytes.get(1) #else bytes[1] #end == 0xfe && #if commonjs bytes.get(2) #else bytes[2] #end == 0x00 && #if commonjs bytes.get(3) #else bytes[3] #end == 0x00))
+            (bytes[0] == 0x00 && bytes[1] == 0x00 && bytes[2] == 0xfe && bytes[3] == 0xff) ||
+            (bytes[0] == 0xff && bytes[1] == 0xfe && bytes[2] == 0x00 && bytes[3] == 0x00))
         {
             start = 4; // UTF-32
         }
-        else if (length >= 3 && #if commonjs bytes.get(0) #else bytes[0] #end == 0xef && #if commonjs bytes.get(1) #else bytes[1] #end == 0xbb && #if commonjs bytes.get(2) #else bytes[2] #end == 0xbf)
+        else if (length >= 3 && bytes[0] == 0xef && bytes[1] == 0xbb && bytes[2] == 0xbf)
         {
             start = 3; // UTF-8
         }
         else if (length >= 2 &&
-            (#if commonjs bytes.get(0) #else bytes[0] #end == 0xfe && #if commonjs bytes.get(1) #else bytes[1] #end == 0xff) || (#if commonjs bytes.get(0) #else bytes[0] #end == 0xff && #if commonjs bytes.get(1) #else bytes[1] #end == 0xfe))
+            (bytes[0] == 0xfe && bytes[1] == 0xff) || (bytes[0] == 0xff && bytes[1] == 0xfe))
         {
             start = 2; // UTF-16
         }
-        
-        // find first meaningful letter
-        
+
         for (i in start...length)
         {
-            var byte:Int = #if commonjs bytes.get(i) #else bytes[i] #end;
-            if (byte == 0 || byte == 10 || byte == 13 || byte == 32) continue; // null, \n, \r, space
-            else return byte == wanted;
+            var byte:Int = bytes[i];
+            if (byte != 0 && byte != 10 && byte != 13 && byte != 32) // null, \n, \r, space
+                return compareByteArrays(bytes, i, wantedBytes, 0, wantedBytes.length);
         }
-        
+
         return false;
+    }
+
+    /** Compares the range of bytes within two byte arrays. */
+    public static function compareByteArrays(a:ByteArray, indexA:Int,
+                                             b:ByteArray, indexB:Int,
+                                             numBytes:Int=-1):Bool
+    {
+        var b1:Int = indexA + numBytes - a.length;
+        var b2:Int = indexB + numBytes - b.length;
+        
+        if (numBytes < 0)
+            numBytes = Std.int(MathUtil.min(a.length - indexA, b.length - indexB));
+        else if (b1 > 0 || b2 > 0 )
+            throw new RangeError();
+
+        for (i in 0...numBytes)
+            if (a[indexA + i] != b[indexB + i]) return false;
+
+        return true;
     }
     
     private function getDictionaryKeys(dictionary:Map<String, Dynamic>, prefix:String="",
